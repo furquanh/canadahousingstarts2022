@@ -13,38 +13,50 @@
 # limitations under the License.
 
 import streamlit as st
+import pandas as pd
+import plotly.express as px
 from streamlit.logger import get_logger
 
 LOGGER = get_logger(__name__)
 
 
 def run():
-    st.set_page_config(
-        page_title="Hello",
-        page_icon="👋",
-    )
 
-    st.write("# Welcome to Streamlit! 👋")
 
-    st.sidebar.success("Select a demo above.")
+    # Title of the dashboard
+    st.title('Canadian Urban Housing Starts Dashboard')
+    st.write('This dashboard presents the data on the number of housing starts throughout Canada in the year 2022. The data was obtained from Canadian Housing Mortgate Housing Corporation public datasets portal [Housing Start 2022](https://www.cmhc-schl.gc.ca/professionals/housing-markets-data-and-research/housing-data/data-tables/housing-market-data/housing-starts-dwelling-type). This Dashboard was created especially for the hiring managers at **Ministry of the Solicitor General**.')
 
-    st.markdown(
-        """
-        Streamlit is an open-source app framework built specifically for
-        Machine Learning and Data Science projects.
-        **👈 Select a demo from the sidebar** to see some examples
-        of what Streamlit can do!
-        ### Want to learn more?
-        - Check out [streamlit.io](https://streamlit.io)
-        - Jump into our [documentation](https://docs.streamlit.io)
-        - Ask a question in our [community
-          forums](https://discuss.streamlit.io)
-        ### See more complex demos
-        - Use a neural net to [analyze the Udacity Self-driving Car Image
-          Dataset](https://github.com/streamlit/demo-self-driving)
-        - Explore a [New York City rideshare dataset](https://github.com/streamlit/demo-uber-nyc-pickups)
-    """
-    )
+    # Load data
+    @st.cache_data
+    def load_data():
+        data = pd.read_csv('Housing_starts_2022.csv')
+        return data
+
+    housing_data = load_data()
+
+    # Sidebar for filtering
+    st.sidebar.header('Filter Data')
+    province = st.sidebar.multiselect('Select Province:', housing_data['Province'].unique())
+    centre = st.sidebar.multiselect('Select Centre:', housing_data['Centre'].unique())
+
+    # Filtering data
+    filtered_data = housing_data
+    if province:
+        filtered_data = filtered_data[filtered_data['Province'].isin(province)]
+    if centre:
+        filtered_data = filtered_data[filtered_data['Centre'].isin(centre)]
+
+    # Display data
+    st.write('## Housing Starts Data', filtered_data)
+
+    # Plotting the data
+    st.write('## Housing Starts by Dwelling Type')
+    dwelling_types = ['Singles', 'Semis', 'Row', 'Apartment and Other']
+    for dwelling in dwelling_types:
+        fig = px.bar(filtered_data, x='Centre', y=dwelling, color='Province', 
+                    title=f'Number of {dwelling}')
+        st.plotly_chart(fig)
 
 
 if __name__ == "__main__":
